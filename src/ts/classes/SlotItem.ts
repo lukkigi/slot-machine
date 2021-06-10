@@ -1,15 +1,10 @@
 import * as PIXI from 'pixi.js';
-
-export class SlotItem {
+export class ColumnItem {
   private assetUrl: string;
   private sprite: PIXI.Sprite;
 
-  constructor(assetUrl: string) {
-    this.assetUrl = assetUrl;
-  }
-
-  public getAssetUrl(): string {
-    return this.assetUrl;
+  constructor(texture: PIXI.Texture) {
+    this.sprite = new PIXI.Sprite(texture);
   }
 
   public getSprite(): PIXI.Sprite {

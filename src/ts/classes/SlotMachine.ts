@@ -1,24 +1,19 @@
 import * as PIXI from 'pixi.js';
 
-import { SlotItem } from './SlotItem';
+import { ColumnItem } from './SlotItem';
+import { Footer } from './Footer';
+import { SpinText } from './SpinText';
 import {
   NUMBER_OF_TURNS,
   ANIMATION_DURATION,
   APPLICATION_FILL_COLOR,
-  ASSET_COUNT,
-  ASSET_PATH,
-  ASSET_SUFFIX,
-  BUTTON_FILL_COLOR,
-  BUTTON_FONT_SIZE,
-  BUTTON_FONT_WEIGHT,
   COLUMN_TOP_PADDING,
-  FOOTER_FILL_COLOR,
-  FOOTER_SIZE,
   ITEM_SIZE,
-  NUMBER_OF_ITEMS,
+  ASSET_COUNT,
 } from '../constants';
 import {
   bounce,
+  buildAssetPath,
   getVerticalCoord,
   getVerticalCoordForNthElement,
   linearInterpolation,
@@ -26,16 +21,14 @@ import {
 
 export class SlotMachine {
   private application: PIXI.Application;
-  private column: PIXI.Graphics;
-  private items: SlotItem[];
-  private availableTextures: PIXI.Texture[];
-  private columnPosition: number = 0;
 
   private readonly columnWidth: number = window.innerWidth / 5;
+  private readonly availableTextures: PIXI.Texture[] = [];
+  private readonly items: ColumnItem[] = [];
 
   constructor() {
     this.initialise();
-    this.generateItems();
+    this.loadAssets();
   }
 
   private initialise() {
@@ -52,114 +45,99 @@ export class SlotMachine {
     };
   }
 
-  private generateItems() {
-    this.items = [];
+  private loadAssets() {
+    const assetUrls = [];
 
-    /*
-     * I have renamed the assets to start with 0.png, so we can start with i = 0 here
-     * Improvement would be to map each index to a proper filename for clarity
-     */
-    for (let i = 0; i < NUMBER_OF_ITEMS; i++) {
-      /*
-       * Generate a random number between 0 and 100
-       * afterwards modulo the maximum numbers of assets to stay within the range
-       */
-      const assetId = Math.floor(Math.random() * 100) % ASSET_COUNT;
-
-      this.items.push(
-        new SlotItem(ASSET_PATH + (assetId % ASSET_COUNT) + ASSET_SUFFIX)
-      );
+    for (let i = 0; i < ASSET_COUNT; i++) {
+      assetUrls.push(buildAssetPath(i));
     }
 
-    /*
-     * Transform the array of items into a Set to filter out duplicates
-     * since the loader needs any asset just once
-     */
-    const assetUrlSet = new Set(this.items.map((item) => item.getAssetUrl()));
-
     this.application.loader
-      .add(Array.from(assetUrlSet))
+      .add(assetUrls)
       .load(this.onLoadingFinished.bind(this));
   }
 
   private onLoadingFinished() {
-    this.createItemsAndColumn();
+    this.createTextures();
+    this.createColumn();
     this.createPlayButton();
   }
 
-  private createItemsAndColumn() {
-    this.availableTextures = this.items.map((item) =>
-      PIXI.Texture.from(item.getAssetUrl())
-    );
+  private createTextures() {
+    const resources = this.application.loader.resources;
+    const resourcesKeys = Object.keys(resources);
 
-    this.column = new PIXI.Graphics();
+    for (let i = 0; i < resourcesKeys.length; i++) {
+      this.availableTextures.push(
+        PIXI.Texture.from(resources[resourcesKeys[i]].name)
+      );
+    }
+  }
 
-    this.column.x = Math.round(
+  private createColumn() {
+    const column = new PIXI.Graphics();
+
+    column.x = Math.round(
       (this.application.screen.width - this.columnWidth) / 2
     );
-    this.column.y = COLUMN_TOP_PADDING;
+    column.y = COLUMN_TOP_PADDING;
 
     for (let i = 0; i < this.availableTextures.length; i++) {
-      const symbol = new PIXI.Sprite(this.availableTextures[i]);
+      const columnItem = this.createItem(i);
 
-      symbol.y = getVerticalCoordForNthElement(i, this.application.screen.height);
-      symbol.scale.x = symbol.scale.y = Math.min(
-        ITEM_SIZE / symbol.width,
-        ITEM_SIZE / symbol.height
-      );
-      symbol.x = Math.round((this.columnWidth - ITEM_SIZE) / 2);
+      column.addChild(columnItem.getSprite());
 
-      this.items[i].setSprite(symbol);
-
-      this.column.addChild(symbol);
+      this.items.push(columnItem);
     }
 
-    this.application.stage.addChild(this.column);
+    this.application.stage.addChild(column);
+  }
+
+  private createItem(itemPosition: number): ColumnItem {
+    const assetNumber = Math.floor(Math.random() * 100) % ASSET_COUNT;
+
+    const columnItem = new ColumnItem(this.availableTextures[assetNumber]);
+    const columnItemSprite = columnItem.getSprite();
+
+    columnItemSprite.y = getVerticalCoordForNthElement(
+      itemPosition,
+      this.application.screen.height
+    );
+    columnItemSprite.x = Math.round((this.columnWidth - ITEM_SIZE) / 2);
+    columnItemSprite.scale.x = columnItemSprite.scale.y = Math.min(
+      ITEM_SIZE / columnItemSprite.width,
+      ITEM_SIZE / columnItemSprite.height
+    );
+
+    return columnItem;
   }
 
   private createPlayButton() {
-    const footer = new PIXI.Graphics();
-
-    footer.x = 0;
-    footer.y = this.application.screen.height - FOOTER_SIZE;
-
-    footer.beginFill(FOOTER_FILL_COLOR);
-    footer.drawRect(0, 0, this.application.screen.width, FOOTER_SIZE);
-    footer.endFill();
-
-    const playTextStyle = new PIXI.TextStyle({
-      fontSize: BUTTON_FONT_SIZE,
-      fontWeight: BUTTON_FONT_WEIGHT,
-      fill: BUTTON_FILL_COLOR,
-    });
-
-    const playText = new PIXI.Text('START A SPIN', playTextStyle);
-    playText.x = Math.round((footer.width - playText.width) / 2);
-    playText.y = Math.round((footer.height - playText.height) / 2);
-    playText.interactive = true;
-    playText.buttonMode = true;
+    const footer = new Footer(this.application.screen);
+    const spinText = new SpinText(footer.getGraphicsObject());
 
     // Click does not work on mobile, so I chose pointer events
-    playText.addListener('pointerdown', () => {
+    spinText.getTextObject().addListener('pointerdown', () => {
       this.animateColumn();
     });
 
-    footer.addChild(playText);
+    footer.addText(spinText.getTextObject());
 
-    this.application.stage.addChild(footer);
+    this.application.stage.addChild(footer.getGraphicsObject());
   }
 
   private animateColumn(): void {
     const start = Date.now();
 
-    this.application.ticker.add((delta) => {
+    // TODO: do not duplicate this every single animation
+    this.application.ticker.add(() => {
       if (Date.now() - start >= ANIMATION_DURATION) {
         return;
       }
 
       const timeLeft = Math.min(1, (Date.now() - start) / ANIMATION_DURATION);
 
-      this.columnPosition = linearInterpolation(
+      const columnPosition = linearInterpolation(
         0,
         NUMBER_OF_TURNS,
         bounce(timeLeft)
@@ -170,11 +148,14 @@ export class SlotMachine {
         const previousPosition = spriteForItem.y;
 
         spriteForItem.y =
-          ((this.columnPosition + i) % this.items.length) *
+          ((columnPosition + i) % this.items.length) *
             getVerticalCoord(this.application.screen.height) -
           getVerticalCoord(this.application.screen.height);
 
-        if (spriteForItem.y < 0 && previousPosition > ITEM_SIZE) {
+        if (
+          spriteForItem.y < 0 &&
+          previousPosition > getVerticalCoord(this.application.screen.height)
+        ) {
           spriteForItem.texture =
             this.availableTextures[
               Math.floor(Math.random() * this.availableTextures.length)

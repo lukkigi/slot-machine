@@ -1,8 +1,15 @@
 import {
+  ASSET_COUNT,
+  ASSET_PATH,
+  ASSET_SUFFIX,
   COLUMN_TOP_PADDING,
   FOOTER_SIZE,
   VISIBLE_ITEMS_COUNT,
 } from '../constants';
+
+export const buildAssetPath = (assetNumber: number): string => {
+  return ASSET_PATH + (assetNumber % ASSET_COUNT) + ASSET_SUFFIX;
+};
 
 export const getVerticalCoord = (screenHeight: number): number => {
   return Math.round(
