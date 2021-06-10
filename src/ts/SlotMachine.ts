@@ -1,8 +1,7 @@
 import * as PIXI from "pixi.js";
-import * as TWEEN from "@tweenjs/tween.js";
 
 import { SlotItem } from './SlotItem';
-import { ADDITIONAL_TURNS_DURATION, ANIMATION_DURATION, ASSET_COUNT, ASSET_PATH, ASSET_SUFFIX, ITEM_PADDING, ITEM_SIZE, NUMBER_OF_ITEMS, VISIBLE_ITEMS_COUNT } from './constants';
+import { ADDITIONAL_TURNS_DURATION, ANIMATION_DURATION, APPLICATION_FILL_COLOR, ASSET_COUNT, ASSET_PATH, ASSET_SUFFIX, BUTTON_FILL_COLOR, BUTTON_FONT_SIZE, BUTTON_FONT_WEIGHT, COLUMN_TOP_PADDING, FOOTER_FILL_COLOR, FOOTER_SIZE, ITEM_PADDING, ITEM_SIZE, NUMBER_OF_ITEMS, VISIBLE_ITEMS_COUNT } from './constants';
 
 export class SlotMachine {
     private application: PIXI.Application;
@@ -20,7 +19,7 @@ export class SlotMachine {
 
     private initialise() {
         this.application = new PIXI.Application({
-            width: window.innerWidth, height: window.innerHeight, backgroundColor: 0xFFD8CC
+            width: window.innerWidth, height: window.innerHeight, backgroundColor: APPLICATION_FILL_COLOR
         });
         
         document.body.appendChild(this.application.view);
@@ -32,8 +31,11 @@ export class SlotMachine {
 
     private generateItems() {
         this.items = [];
-        // I have renamed the assets to start with 0.png, so we can start with i = 0 here
 
+        /* 
+         * I have renamed the assets to start with 0.png, so we can start with i = 0 here
+         * Improvement would be to map each index to a proper filename for clarity
+         */
         for (let i = 0; i < NUMBER_OF_ITEMS; i++) {
             /*
             * Generate a random number between 0 and 100
@@ -46,7 +48,10 @@ export class SlotMachine {
             );
         }
 
-        // Transform the array of items into a Set to filter out duplicates since the loader only needs any asset just once
+        /* 
+         * Transform the array of items into a Set to filter out duplicates 
+         * since the loader needs any asset just once
+         */
         const assetUrlSet = new Set(this.items.map(item => item.getAssetUrl()));
 
         this.application.loader.add(Array.from(assetUrlSet)).load(this.onLoadingFinished.bind(this));
@@ -63,17 +68,12 @@ export class SlotMachine {
         this.column = new PIXI.Graphics();
 
         this.column.x = Math.round((this.application.screen.width - this.columnWidth) / 2);
-        this.column.y = Math.round((this.application.screen.height - ITEM_SIZE) / 8);
-
-        // this.column.beginFill(0xffbd9b);
-        // this.column.drawRect(0, 0, this.columnWidth, this.application.screen.height);
-        // this.column.endFill();
+        this.column.y = COLUMN_TOP_PADDING;
 
         for (let i = 0; i < this.availableTextures.length; i++) {
             const symbol = new PIXI.Sprite(this.availableTextures[i]);
 
-            // symbol.y =  i * (ITEM_SIZE + (this.application.screen.height - ITEM_SIZE * VISIBLE_ITEMS_COUNT) / VISIBLE_ITEMS_COUNT);
-            symbol.y = i * (ITEM_SIZE + ITEM_PADDING);
+            symbol.y = this.getVerticalCoordForNthElement(i);
             symbol.scale.x = symbol.scale.y = Math.min(ITEM_SIZE / symbol.width, ITEM_SIZE / symbol.height);
             symbol.x = Math.round((this.columnWidth - ITEM_SIZE) / 2);
 
@@ -89,16 +89,16 @@ export class SlotMachine {
         const footer = new PIXI.Graphics();
 
         footer.x = 0;
-        footer.y = this.application.screen.height - 100;
+        footer.y = this.application.screen.height - FOOTER_SIZE;
 
-        footer.beginFill(0x0a1d37);
-        footer.drawRect(0, 0, this.application.screen.width, 100);
+        footer.beginFill(FOOTER_FILL_COLOR);
+        footer.drawRect(0, 0, this.application.screen.width, FOOTER_SIZE);
         footer.endFill();
 
         const playTextStyle = new PIXI.TextStyle({
-            fontSize: 24,
-            fontWeight: 'bold',
-            fill: 0xFFFFFF
+            fontSize: BUTTON_FONT_SIZE,
+            fontWeight: BUTTON_FONT_WEIGHT,
+            fill: BUTTON_FILL_COLOR
         });
 
         const playText = new PIXI.Text('START A SPIN', playTextStyle);
@@ -106,7 +106,9 @@ export class SlotMachine {
         playText.y = Math.round((footer.height - playText.height) / 2);
         playText.interactive = true;
         playText.buttonMode = true;
-        playText.addListener('click', () => {
+
+        // click does not work on mobile, so I chose pointer events
+        playText.addListener('pointerdown', () => {
             this.animateColumn();
         });
 
@@ -133,22 +135,34 @@ export class SlotMachine {
                 const spriteForItem = this.items[i].getSprite();
                 const previousPosition = spriteForItem.y;
 
-                spriteForItem.y = ((this.columnPosition + i) % this.items.length) * (ITEM_SIZE + ITEM_PADDING) - (ITEM_SIZE + ITEM_PADDING);
+                spriteForItem.y = ((this.columnPosition + i) % this.items.length) * this.getVerticalCoord() - this.getVerticalCoord();
 
                 if (spriteForItem.y < 0 && previousPosition > ITEM_SIZE) {
-                    console.log('swap');
-
                     spriteForItem.texture = this.availableTextures[Math.floor(Math.random() * this.availableTextures.length)];
                 }
             }
         });
     }
 
-    private returnLinearInterpolation(start: number, end: number, alpha: number): number {
-        return start * (1 - alpha) + end * alpha;
+    private getVerticalCoord(): number {
+        return Math.round((this.application.screen.height - FOOTER_SIZE - COLUMN_TOP_PADDING) / VISIBLE_ITEMS_COUNT);
     }
 
-    /* taken from https://github.com/tweenjs/tween.js/blob/master/src/Easing.ts and modified s to fit my needs */
+    private getVerticalCoordForNthElement(elementPosition: number): number {
+        return Math.round(elementPosition * this.getVerticalCoord());
+    }
+
+    /* 
+     * We need this to get values between our start and end point, taking the time into consideration
+     * without using this function there would be just the end animation happening
+     * 
+     * Function used is from https://en.wikipedia.org/wiki/Linear_interpolation
+     */
+    private returnLinearInterpolation(start: number, end: number, alpha: number): number {
+        return (1 - alpha) * start + end * alpha;
+    }
+
+    // Taken from https://github.com/tweenjs/tween.js/blob/master/src/Easing.ts and modified s to fit my needs
     private bounce (amount: number): number {
         const s = 0.50158
         return amount === 0 ? 0 : --amount * amount * ((s + 1) * amount + s) + 1
