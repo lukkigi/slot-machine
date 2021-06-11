@@ -1,4 +1,4 @@
-import { ASSET_COUNT, ASSET_PATH, ASSET_SUFFIX, BOUNCE_FACTOR, COLUMN_TOP_PADDING, FOOTER_SIZE, VISIBLE_ITEMS_COUNT } from '../constants';
+import { ASSET_COUNT, ASSET_PATH, ASSET_SUFFIX, BOUNCE_FACTOR, COLUMN_TOP_PADDING, FOOTER_SIZE, ITEM_PADDING, VISIBLE_ITEMS_COUNT } from '../constants';
 
 export const buildAssetPath = (assetNumber: number): string | null => {
   if (assetNumber == null) {
@@ -14,7 +14,7 @@ export const getVerticalCoord = (screenHeight: number): number => {
     return 0;
   }
 
-  return Math.round((screenHeight - FOOTER_SIZE - COLUMN_TOP_PADDING) / VISIBLE_ITEMS_COUNT);
+  return Math.round((screenHeight - FOOTER_SIZE - COLUMN_TOP_PADDING + ITEM_PADDING * 3) / VISIBLE_ITEMS_COUNT);
 };
 
 // Calls getVerticalCoord() but returns it multiplicated with the position offset to account for the position of every element after the first one

@@ -10,7 +10,7 @@ export const BOUNCE_FACTOR = 0.4;
 
 /* GRAPHICS */
 export const APPLICATION_FILL_COLOR = 0xffd8cc;
-export const COLUMN_TOP_PADDING = 100;
+export const COLUMN_TOP_PADDING = 50;
 export const ITEM_SIZE = 150;
 export const ITEM_PADDING = 25;
 

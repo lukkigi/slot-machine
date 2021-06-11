@@ -67,7 +67,7 @@ export class SlotMachine {
     const column = new PIXI.Graphics();
 
     column.x = Math.round((this.application.screen.width - this.columnWidth) / 2);
-    column.y = COLUMN_TOP_PADDING;
+    column.y = -getVerticalCoordForNthElement(1, this.application.screen.height) + COLUMN_TOP_PADDING;
 
     for (let i = 0; i < this.availableTextures.length; i++) {
       const columnItem = this.createItem(i);
@@ -129,6 +129,7 @@ export class SlotMachine {
       // check if the animation duration has been reached and reset animationStart to stop the animation loop
       if (Date.now() - this.animationStart >= ANIMATION_DURATION) {
         this.animationStart = undefined;
+
         return;
       }
 
