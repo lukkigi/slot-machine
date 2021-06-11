@@ -1,9 +1,5 @@
 import * as PIXI from 'pixi.js';
-import {
-  BUTTON_FILL_COLOR,
-  BUTTON_FONT_SIZE,
-  BUTTON_FONT_WEIGHT,
-} from '../constants';
+import { BUTTON_FILL_COLOR, BUTTON_FONT_SIZE, BUTTON_FONT_WEIGHT } from '../constants';
 
 export class SpinText {
   private textObject: PIXI.Text;
@@ -18,11 +14,11 @@ export class SpinText {
   }
 
   private createTextStyle(): PIXI.TextStyle {
-      return new PIXI.TextStyle({
-        fontSize: BUTTON_FONT_SIZE,
-        fontWeight: BUTTON_FONT_WEIGHT,
-        fill: BUTTON_FILL_COLOR,
-      });
+    return new PIXI.TextStyle({
+      fontSize: BUTTON_FONT_SIZE,
+      fontWeight: BUTTON_FONT_WEIGHT,
+      fill: BUTTON_FILL_COLOR,
+    });
   }
 
   public getTextObject(): PIXI.Text {
