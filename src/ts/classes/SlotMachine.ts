@@ -21,6 +21,7 @@ import {
 
 export class SlotMachine {
   private application: PIXI.Application;
+  private animationStart: number = undefined;
 
   private readonly columnWidth: number = window.innerWidth / 5;
   private readonly availableTextures: PIXI.Texture[] = [];
@@ -61,6 +62,7 @@ export class SlotMachine {
     this.createTextures();
     this.createColumn();
     this.createPlayButton();
+    this.createAnimationTickerFunction();
   }
 
   private createTextures() {
@@ -126,42 +128,67 @@ export class SlotMachine {
     this.application.stage.addChild(footer.getGraphicsObject());
   }
 
+  /**
+   * Sets animationStart to the current time to trigger the animation loop
+   */
   private animateColumn(): void {
-    const start = Date.now();
+    this.animationStart = Date.now();
+  }
 
-    // TODO: do not duplicate this every single animation
+  /**
+   * If animationStart is undefined, do not trigger any animation
+   * 
+   * If animation is currently set, that means we have to animate the elements:
+   * 
+   */
+  private createAnimationTickerFunction(): void {
     this.application.ticker.add(() => {
-      if (Date.now() - start >= ANIMATION_DURATION) {
-        return;
-      }
-
-      const timeLeft = Math.min(1, (Date.now() - start) / ANIMATION_DURATION);
-
-      const columnPosition = linearInterpolation(
-        0,
-        NUMBER_OF_TURNS,
-        bounce(timeLeft)
-      );
-
-      for (let i = 0; i < this.items.length; i++) {
-        const spriteForItem = this.items[i].getSprite();
-        const previousPosition = spriteForItem.y;
-
-        spriteForItem.y =
-          ((columnPosition + i) % this.items.length) *
-            getVerticalCoord(this.application.screen.height) -
-          getVerticalCoord(this.application.screen.height);
-
-        if (
-          spriteForItem.y < 0 &&
-          previousPosition > getVerticalCoord(this.application.screen.height)
-        ) {
-          spriteForItem.texture =
-            this.availableTextures[
-              Math.floor(Math.random() * this.availableTextures.length)
-            ];
+        if (!this.animationStart) {
+            return;
         }
-      }
-    });
+
+        // check if the animation duration has been reached and reset animationStart to stop the animation loop
+        if (Date.now() - this.animationStart >= ANIMATION_DURATION) {
+          this.animationStart = undefined;
+          return;
+        }
+  
+        // calculate the remaining turns to make based on the animation that's left
+        const turnsLeft = Math.min(1, (Date.now() - this.animationStart) / ANIMATION_DURATION);
+  
+        /**
+         * Leveraging our linearInterpolation function, we get interpolated points between the start and end position 
+         * of our elements based on our calculated turnsLeft before
+         */
+        const columnPosition = linearInterpolation(
+          0,
+          NUMBER_OF_TURNS,
+          bounce(turnsLeft)
+        );
+  
+        for (let i = 0; i < this.items.length; i++) {
+          const spriteForItem = this.items[i].getSprite();
+          const previousPosition = spriteForItem.y;
+  
+          /**
+           * For each interpolated point we re-position our element, modulo is used so the position does not overflow our max items number
+           */
+          spriteForItem.y = getVerticalCoordForNthElement((columnPosition + i) % this.items.length, this.application.screen.height);
+  
+          /**
+           * We have to check if the element goes "over the end" and then swap the texture to a new randomised texture
+           * as to avoid having the same pattern of textures every single turn
+           */
+          if (
+            spriteForItem.y < 0 &&
+            previousPosition > getVerticalCoord(this.application.screen.height)
+          ) {
+            spriteForItem.texture =
+              this.availableTextures[
+                Math.floor(Math.random() * this.availableTextures.length)
+              ];
+          }
+        }
+      });
   }
 }

@@ -2,6 +2,7 @@ import {
   ASSET_COUNT,
   ASSET_PATH,
   ASSET_SUFFIX,
+  BOUNCE_FACTOR,
   COLUMN_TOP_PADDING,
   FOOTER_SIZE,
   VISIBLE_ITEMS_COUNT,
@@ -11,12 +12,14 @@ export const buildAssetPath = (assetNumber: number): string => {
   return ASSET_PATH + (assetNumber % ASSET_COUNT) + ASSET_SUFFIX;
 };
 
+// Returns the y coordinate for an element at the first position, so all visible elements will be shown regardless of screen height
 export const getVerticalCoord = (screenHeight: number): number => {
   return Math.round(
     (screenHeight - FOOTER_SIZE - COLUMN_TOP_PADDING) / VISIBLE_ITEMS_COUNT
   );
 };
 
+// Calls getVerticalCoord() but returns it multiplicated with the position offset to account for the position of every element after the first one
 export const getVerticalCoordForNthElement = (
   elementPosition: number,
   screenHeight: number
@@ -24,7 +27,7 @@ export const getVerticalCoordForNthElement = (
   return Math.round(elementPosition * getVerticalCoord(screenHeight));
 };
 
-/*
+/**
  * We need this to get values between our start and end point, taking the time into consideration
  * without using this function there would be just the end animation happening
  *
@@ -38,8 +41,11 @@ export const linearInterpolation = (
   return (1 - alpha) * start + end * alpha;
 };
 
-// Taken from https://github.com/tweenjs/tween.js/blob/master/src/Easing.ts and modified s to fit my needs
-export const bounce = (amount: number): number => {
-  const s = 0.50158;
-  return amount === 0 ? 0 : --amount * amount * ((s + 1) * amount + s) + 1;
+// Taken from https://easings.net/#easeOutBack and modified the BOUNCE_FACTOR to fit my needs
+export const bounce = (x: number): number => {
+  return (
+    1 +
+    (BOUNCE_FACTOR + 1) * Math.pow(x - 1, 3) +
+    BOUNCE_FACTOR * Math.pow(x - 1, 2)
+  );
 };
