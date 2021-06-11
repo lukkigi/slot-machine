@@ -39,8 +39,6 @@ export class SlotMachine {
     for (let i = 0; i < ASSET_COUNT; i++) {
       const assetUrl = buildAssetPath(i);
 
-      console.log(assetUrl);
-
       if (assetUrl) {
         assetUrls.push(assetUrl);
       }
@@ -156,7 +154,7 @@ export class SlotMachine {
          * We have to check if the element goes "over the end" and then swap the texture to a new randomised texture
          * as to avoid having the same pattern of textures every single turn
          */
-        if (spriteForItem.y < 0 && previousPosition > getVerticalCoord(this.application.screen.height)) {
+        if (spriteForItem.y < COLUMN_TOP_PADDING && previousPosition > getVerticalCoord(this.application.screen.height)) {
           spriteForItem.texture = this.availableTextures[Math.floor(Math.random() * this.availableTextures.length)];
         }
       }
