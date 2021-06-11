@@ -5,12 +5,12 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 module.exports = {
   mode: 'development',
   entry: './src/ts/index.ts',
-  devtool: "inline-source-map",
+  devtool: 'inline-source-map',
   devServer: {
     contentBase: path.join(__dirname, 'dist'),
     compress: true,
     port: 8080,
-    hot: true
+    hot: true,
   },
   module: {
     rules: [
@@ -25,21 +25,17 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: ['@babel/preset-env']
-          }
-        }
-      }
+            presets: ['@babel/preset-env'],
+          },
+        },
+      },
     ],
   },
   plugins: [
     new CleanWebpackPlugin(),
     new CopyPlugin({
-      patterns: [
-        { from: 'src/index.html' },
-        { from: 'src/css/application.css', to: 'css/' },
-        { from: 'src/assets/', to: 'assets/' },
-      ]
-    })
+      patterns: [{ from: 'src/index.html' }, { from: 'src/css/application.css', to: 'css/' }, { from: 'src/assets/', to: 'assets/' }],
+    }),
   ],
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],

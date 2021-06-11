@@ -67,28 +67,28 @@ describe('linearInterpolation', () => {
   });
 
   it('should return the halfway point correctly', () => {
-      expect(linearInterpolation(LINEAR_INTERPOLATION_START, LINEAR_INTERPOLATION_END, 0.5)).toBe(LINEAR_INTERPOLATION_END / 2);
+    expect(linearInterpolation(LINEAR_INTERPOLATION_START, LINEAR_INTERPOLATION_END, 0.5)).toBe(LINEAR_INTERPOLATION_END / 2);
   });
 
   it('should return the point at 0.3 correctly', () => {
-      expect(linearInterpolation(LINEAR_INTERPOLATION_START, LINEAR_INTERPOLATION_END, 0.3)).toBe(Math.floor(LINEAR_INTERPOLATION_END / 3));
-  })
+    expect(linearInterpolation(LINEAR_INTERPOLATION_START, LINEAR_INTERPOLATION_END, 0.3)).toBe(Math.floor(LINEAR_INTERPOLATION_END / 3));
+  });
 });
 
 describe('bounce', () => {
-    it('should return 0 for the first point on the bounce curve', () => {
-        expect(Math.round(bounce(0))).toBe(0);
-    });
+  it('should return 0 for the first point on the bounce curve', () => {
+    expect(Math.round(bounce(0))).toBe(0);
+  });
 
-    it('should return 1 for the last point on the bounce curve', () => {
-        expect(bounce(1)).toBe(1);
-    });
+  it('should return 1 for the last point on the bounce curve', () => {
+    expect(bounce(1)).toBe(1);
+  });
 
-    it('should return the correct value for the middle point on the bounce curve', () => {
-        expect(bounce(0.5)).toBe(EXPECTED_BOUNCE_MIDDLE_POINT_VALUE);
-    });
+  it('should return the correct value for the middle point on the bounce curve', () => {
+    expect(bounce(0.5)).toBe(EXPECTED_BOUNCE_MIDDLE_POINT_VALUE);
+  });
 
-    it('should return the correct value for the 3/4 point on the bounce curve', () => {
-        expect(bounce(0.75)).toBe(EXPECTED_BOUNCE_NEAR_END_POINT_VALUE);
-    })
+  it('should return the correct value for the 3/4 point on the bounce curve', () => {
+    expect(bounce(0.75)).toBe(EXPECTED_BOUNCE_NEAR_END_POINT_VALUE);
+  });
 });
