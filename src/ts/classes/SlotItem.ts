@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
+
 export class ColumnItem {
-  private assetUrl: string;
   private sprite: PIXI.Sprite;
 
   constructor(texture: PIXI.Texture) {
